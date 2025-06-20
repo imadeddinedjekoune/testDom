@@ -124,16 +124,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return res.status(400).json({ error: `Raise must be higher than current bet of ${game.currentBetAmount}` });
           }
           
-          // Calculate how much more the player needs to add
-          const additionalAmount = amount - currentPlayer.currentBet;
-          if (additionalAmount > currentPlayer.balance) {
+          // Player pays the full raise amount
+          if (amount > currentPlayer.balance) {
             return res.status(400).json({ error: "Insufficient balance to raise" });
           }
           
-          newBalance -= additionalAmount;
+          newBalance -= amount;
           newBet = amount;
-          amount = additionalAmount;  // This is what gets added to the pot
-          await storage.updateCurrentBetAmount(gameId, newBet);  // Update game's current bet to the new total bet amount
+          await storage.updateCurrentBetAmount(gameId, amount);  // Update game's current bet to the raise amount
           break;
       }
       
