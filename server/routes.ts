@@ -89,15 +89,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       switch (actionData.action) {
         case "fold":
           newStatus = "folded";
-          
-          // Small blind penalty: If small blind (position 2) folds in first round, lose half of big blind's bet
-          if (currentPlayer.position === 2 && game.currentRound === "pre-flop" && game.currentBetAmount > 0) {
-            const smallBlindPenalty = Math.floor(game.currentBetAmount / 2);
-            if (smallBlindPenalty > 0) {
-              newBalance -= smallBlindPenalty;
-              amount = smallBlindPenalty; // This will be added to the pot
-            }
-          }
           break;
           
         case "call":
@@ -150,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updatePlayerStatus(currentPlayer.id, newStatus);
       
       // Update pot
-      if (actionData.action !== "fold" || amount > 0) {
+      if (actionData.action !== "fold") {
         await storage.updateGamePot(gameId, game.pot + amount);
       }
       
