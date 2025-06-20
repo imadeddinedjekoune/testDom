@@ -266,19 +266,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Game or winner not found" });
       }
       
-      // Calculate total pot from all remaining players
-      const totalRemainingMoney = allPlayers.reduce((sum, p) => sum + p.balance, 0) + game.pot;
-      
-      // Give all money to winner
-      await storage.updatePlayerBalance(winnerId, totalRemainingMoney);
-      
-      // Set all other players to 0
-      for (const player of allPlayers) {
-        if (player.id !== winnerId) {
-          await storage.updatePlayerBalance(player.id, 0);
-          await storage.updatePlayerStatus(player.id, "out");
-        }
-      }
+      // Give pot to winner
+      await storage.updatePlayerBalance(winnerId, winner.balance + game.pot);
       
       // Record game winner action
       await storage.createAction({
@@ -288,13 +277,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         playerId: winner.id,
         playerName: winner.name,
         action: "game_winner",
-        amount: totalRemainingMoney,
+        amount: game.pot,
       });
+      
+      // Clear the pot since it's been awarded
+      await storage.updateGamePot(gameId, 0);
       
       // End the game
       await storage.endGame(gameId);
       
-      res.json({ success: true, totalWon: totalRemainingMoney });
+      res.json({ success: true, totalWon: game.pot });
     } catch (error) {
       res.status(400).json({ error: "Failed to end game" });
     }
