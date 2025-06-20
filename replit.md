@@ -95,7 +95,8 @@ The application is configured for deployment on Replit with the following setup:
 - **Automatic Turn Progression**: Eliminated manual player selection; system now automatically cycles through players (P1 → P2 → P3 → P1...)
 - **Current Player Highlighting**: Active player is highlighted with blue border and "TURN" indicator
 - **Traditional Poker Betting Rules**: 
-  - First player sets initial bet amount
+  - Big Blind (Player 1) must bet first to start each hand
+  - Small Blind (Player 2) loses half the big blind bet if folding in pre-flop round only
   - Subsequent players can only call (match amount), raise (increase amount), or fold
   - Bet amount persists across all three rounds (pre-flop, turn, river)
   - Call button shows exact amount needed
@@ -118,6 +119,7 @@ The application is configured for deployment on Replit with the following setup:
 - **Fixed Call Logic**: Call amount now always equals the current bet amount exactly (if current bet is 15, call is 15)
 - **Fixed Balance Updates**: Player balances now decrease by correct amounts contributed
 - **Fixed End Game Logic**: Game winner now receives only the current pot, not all player money
+- **Added Blind Mechanics**: Big blind (P1) and small blind (P2) system with penalty for small blind folding in pre-flop
 - **Improved Error Handling**: Added detailed logging for betting action debugging
 
 ## User Preferences

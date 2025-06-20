@@ -62,6 +62,15 @@ export function BettingActions({ gameState, onAction }: BettingActionsProps) {
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <h2 className="text-lg font-semibold text-gray-900 mb-4">Betting Actions</h2>
       
+      {/* Blind Rules Info */}
+      {gameState.game.currentRound === "pre-flop" && (
+        <div className="mb-4 p-3 bg-amber-50 rounded-md border border-amber-200">
+          <p className="text-sm text-amber-800">
+            <strong>Blind Rules:</strong> Big Blind (P1) bets first. Small Blind (P2) loses half the bet if folding in pre-flop.
+          </p>
+        </div>
+      )}
+      
       {/* Current Player Display */}
       <div className="mb-4 p-3 bg-blue-50 rounded-md border border-blue-200">
         <div className="flex items-center justify-between">
@@ -71,6 +80,12 @@ export function BettingActions({ gameState, onAction }: BettingActionsProps) {
               <p className="text-sm font-medium text-blue-900">Current Turn</p>
               <p className="text-lg font-semibold text-blue-800">
                 {currentPlayer.name} (Balance: {currentPlayer.balance})
+                {currentPlayer.position === 1 && (
+                  <span className="ml-2 text-xs font-medium text-red-600">BIG BLIND</span>
+                )}
+                {currentPlayer.position === 2 && (
+                  <span className="ml-2 text-xs font-medium text-yellow-600">SMALL BLIND</span>
+                )}
               </p>
             </div>
           </div>
