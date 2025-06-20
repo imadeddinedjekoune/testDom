@@ -6,7 +6,9 @@ export interface IStorage {
   getGame(id: number): Promise<Game | undefined>;
   updateGameRound(gameId: number, round: string): Promise<void>;
   updateGamePot(gameId: number, pot: number): Promise<void>;
+  updateCurrentPlayerTurn(gameId: number, playerId: number): Promise<void>;
   nextHand(gameId: number): Promise<void>;
+  endGame(gameId: number): Promise<void>;
   
   // Player operations
   createPlayer(player: InsertPlayer): Promise<Player>;
@@ -46,6 +48,7 @@ export class MemStorage implements IStorage {
       currentHandNumber: 1,
       currentRound: "pre-flop",
       pot: 0,
+      currentPlayerTurn: 1,
       isActive: true,
       createdAt: new Date(),
     };
@@ -73,22 +76,38 @@ export class MemStorage implements IStorage {
     }
   }
 
+  async updateCurrentPlayerTurn(gameId: number, playerId: number): Promise<void> {
+    const game = this.games.get(gameId);
+    if (game) {
+      game.currentPlayerTurn = playerId;
+      this.games.set(gameId, game);
+    }
+  }
+
   async nextHand(gameId: number): Promise<void> {
     const game = this.games.get(gameId);
     if (game) {
       game.currentHandNumber += 1;
       game.currentRound = "pre-flop";
       game.pot = 0;
+      game.currentPlayerTurn = 1;
       this.games.set(gameId, game);
       
       // Reset all player bets and status
-      for (const [id, player] of this.players) {
-        if (player.gameId === gameId) {
-          player.currentBet = 0;
-          player.status = player.balance > 0 ? "active" : "out";
-          this.players.set(id, player);
-        }
+      const players = Array.from(this.players.values()).filter(p => p.gameId === gameId);
+      for (const player of players) {
+        player.currentBet = 0;
+        player.status = player.balance > 0 ? "active" : "out";
+        this.players.set(player.id, player);
       }
+    }
+  }
+
+  async endGame(gameId: number): Promise<void> {
+    const game = this.games.get(gameId);
+    if (game) {
+      game.isActive = false;
+      this.games.set(gameId, game);
     }
   }
 
@@ -139,6 +158,7 @@ export class MemStorage implements IStorage {
     const action: Action = {
       ...insertAction,
       id,
+      amount: insertAction.amount ?? null,
       timestamp: new Date(),
     };
     this.actions.set(id, action);

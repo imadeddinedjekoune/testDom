@@ -5,9 +5,12 @@ import { insertGameSchema, insertPlayerSchema, insertActionSchema } from "@share
 import { z } from "zod";
 
 const betActionSchema = z.object({
-  playerId: z.number(),
   action: z.enum(["bet", "call", "raise", "fold"]),
   amount: z.number().optional(),
+});
+
+const endGameSchema = z.object({
+  winnerId: z.number(),
 });
 
 const declareWinnerSchema = z.object({
@@ -58,27 +61,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Make a betting action
+  // Make a betting action (for current player)
   app.post("/api/games/:id/actions", async (req, res) => {
     try {
       const gameId = parseInt(req.params.id);
       const actionData = betActionSchema.parse(req.body);
       
       const game = await storage.getGame(gameId);
-      const player = (await storage.getPlayersByGame(gameId)).find(p => p.id === actionData.playerId);
+      const allPlayers = await storage.getPlayersByGame(gameId);
       
-      if (!game || !player) {
-        return res.status(404).json({ error: "Game or player not found" });
+      if (!game) {
+        return res.status(404).json({ error: "Game not found" });
       }
       
-      if (player.status !== "active") {
-        return res.status(400).json({ error: "Player is not active" });
+      // Find current player based on turn
+      const currentPlayer = allPlayers.find(p => p.position === game.currentPlayerTurn && p.status === "active");
+      
+      if (!currentPlayer) {
+        return res.status(400).json({ error: "No active player for current turn" });
       }
       
       let amount = actionData.amount || 0;
-      let newBalance = player.balance;
-      let newBet = player.currentBet;
-      let newStatus = player.status;
+      let newBalance = currentPlayer.balance;
+      let newBet = currentPlayer.currentBet;
+      let newStatus = currentPlayer.status;
       
       switch (actionData.action) {
         case "fold":
@@ -87,11 +93,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
         case "call":
           // Find the highest current bet
-          const allPlayers = await storage.getPlayersByGame(gameId);
           const highestBet = Math.max(...allPlayers.map(p => p.currentBet));
-          const callAmount = highestBet - player.currentBet;
+          const callAmount = highestBet - currentPlayer.currentBet;
           
-          if (callAmount > player.balance) {
+          if (callAmount > currentPlayer.balance) {
             return res.status(400).json({ error: "Insufficient balance to call" });
           }
           
@@ -102,7 +107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
         case "bet":
         case "raise":
-          if (amount > player.balance) {
+          if (amount > currentPlayer.balance) {
             return res.status(400).json({ error: "Insufficient balance" });
           }
           
@@ -112,9 +117,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Update player
-      await storage.updatePlayerBalance(player.id, newBalance);
-      await storage.updatePlayerBet(player.id, newBet);
-      await storage.updatePlayerStatus(player.id, newStatus);
+      await storage.updatePlayerBalance(currentPlayer.id, newBalance);
+      await storage.updatePlayerBet(currentPlayer.id, newBet);
+      await storage.updatePlayerStatus(currentPlayer.id, newStatus);
       
       // Update pot
       if (actionData.action !== "fold") {
@@ -126,11 +131,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         gameId,
         handNumber: game.currentHandNumber,
         round: game.currentRound,
-        playerId: player.id,
-        playerName: player.name,
+        playerId: currentPlayer.id,
+        playerName: currentPlayer.name,
         action: actionData.action,
         amount: actionData.action === "fold" ? undefined : amount,
       });
+      
+      // Move to next player
+      const activePlayers = allPlayers.filter(p => p.status === "active");
+      const currentIndex = activePlayers.findIndex(p => p.id === currentPlayer.id);
+      const nextIndex = (currentIndex + 1) % activePlayers.length;
+      const nextPlayer = activePlayers[nextIndex];
+      
+      if (nextPlayer) {
+        await storage.updateCurrentPlayerTurn(gameId, nextPlayer.position);
+      }
       
       res.json({ success: true });
     } catch (error) {
@@ -172,7 +187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Declare winner
+  // Declare winner (for hand)
   app.post("/api/games/:id/declare-winner", async (req, res) => {
     try {
       const gameId = parseInt(req.params.id);
@@ -205,6 +220,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(400).json({ error: "Failed to declare winner" });
+    }
+  });
+
+  // End game with final winner
+  app.post("/api/games/:id/end-game", async (req, res) => {
+    try {
+      const gameId = parseInt(req.params.id);
+      const { winnerId } = endGameSchema.parse(req.body);
+      
+      const game = await storage.getGame(gameId);
+      const allPlayers = await storage.getPlayersByGame(gameId);
+      const winner = allPlayers.find(p => p.id === winnerId);
+      
+      if (!game || !winner) {
+        return res.status(404).json({ error: "Game or winner not found" });
+      }
+      
+      // Calculate total pot from all remaining players
+      const totalRemainingMoney = allPlayers.reduce((sum, p) => sum + p.balance, 0) + game.pot;
+      
+      // Give all money to winner
+      await storage.updatePlayerBalance(winnerId, totalRemainingMoney);
+      
+      // Set all other players to 0
+      for (const player of allPlayers) {
+        if (player.id !== winnerId) {
+          await storage.updatePlayerBalance(player.id, 0);
+          await storage.updatePlayerStatus(player.id, "out");
+        }
+      }
+      
+      // Record game winner action
+      await storage.createAction({
+        gameId,
+        handNumber: game.currentHandNumber,
+        round: game.currentRound,
+        playerId: winner.id,
+        playerName: winner.name,
+        action: "game_winner",
+        amount: totalRemainingMoney,
+      });
+      
+      // End the game
+      await storage.endGame(gameId);
+      
+      res.json({ success: true, totalWon: totalRemainingMoney });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to end game" });
     }
   });
 

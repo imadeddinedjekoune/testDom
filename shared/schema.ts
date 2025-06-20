@@ -9,6 +9,7 @@ export const games = pgTable("games", {
   currentHandNumber: integer("current_hand_number").notNull().default(1),
   currentRound: text("current_round").notNull().default("pre-flop"),
   pot: integer("pot").notNull().default(0),
+  currentPlayerTurn: integer("current_player_turn").notNull().default(1),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });

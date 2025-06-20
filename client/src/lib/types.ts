@@ -6,6 +6,7 @@ export interface GameState {
     currentHandNumber: number;
     currentRound: string;
     pot: number;
+    currentPlayerTurn: number;
     isActive: boolean;
   };
   players: Array<{

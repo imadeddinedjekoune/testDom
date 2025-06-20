@@ -39,8 +39,8 @@ export default function Game() {
   });
 
   const actionMutation = useMutation({
-    mutationFn: async ({ playerId, action, amount }: { playerId: number; action: BetAction; amount?: number }) => {
-      await apiRequest("POST", `/api/games/${gameId}/actions`, { playerId, action, amount });
+    mutationFn: async ({ action, amount }: { action: BetAction; amount?: number }) => {
+      await apiRequest("POST", `/api/games/${gameId}/actions`, { action, amount });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/games/${gameId}`] });
@@ -80,16 +80,30 @@ export default function Game() {
     },
   });
 
+  const endGameMutation = useMutation({
+    mutationFn: async (winnerId: number) => {
+      await apiRequest("POST", `/api/games/${gameId}/end-game`, { winnerId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/games/${gameId}`] });
+      toast({ title: "Game ended! Winner takes all." });
+    },
+  });
+
   const handleStartGame = (playerCount: number, startingBalance: number) => {
     createGameMutation.mutate({ playerCount, startingBalance });
   };
 
-  const handleAction = (playerId: number, action: BetAction, amount?: number) => {
-    actionMutation.mutate({ playerId, action, amount });
+  const handleAction = (action: BetAction, amount?: number) => {
+    actionMutation.mutate({ action, amount });
   };
 
   const handleDeclareWinner = (playerId: number) => {
     declareWinnerMutation.mutate(playerId);
+  };
+
+  const handleEndGame = (winnerId: number) => {
+    endGameMutation.mutate(winnerId);
   };
 
   const handleNewGame = () => {
@@ -171,7 +185,7 @@ export default function Game() {
             </div>
 
             {/* Players Table */}
-            <PlayersTable gameState={gameState!} onDeclareWinner={handleDeclareWinner} />
+            <PlayersTable gameState={gameState!} onDeclareWinner={handleDeclareWinner} onEndGame={handleEndGame} />
 
             {/* Betting Actions */}
             <BettingActions gameState={gameState!} onAction={handleAction} />
