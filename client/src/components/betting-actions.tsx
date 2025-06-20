@@ -80,12 +80,6 @@ export function BettingActions({ gameState, onAction }: BettingActionsProps) {
               <p className="text-sm font-medium text-blue-900">Current Turn</p>
               <p className="text-lg font-semibold text-blue-800">
                 {currentPlayer.name} (Balance: {currentPlayer.balance})
-                {currentPlayer.position === 1 && (
-                  <span className="ml-2 text-xs font-medium text-red-600">BIG BLIND</span>
-                )}
-                {currentPlayer.position === 2 && (
-                  <span className="ml-2 text-xs font-medium text-yellow-600">SMALL BLIND</span>
-                )}
               </p>
             </div>
           </div>

@@ -57,16 +57,6 @@ export function PlayersTable({ gameState, onDeclareWinner, onEndGame }: PlayersT
                       <div className="ml-3">
                         <div className={`text-sm font-medium ${isCurrentTurn ? 'text-blue-900' : 'text-gray-900'}`}>
                           {player.name}
-                          {player.position === 1 && (
-                            <span className="ml-2 px-1.5 py-0.5 text-xs font-semibold bg-red-100 text-red-800 rounded">
-                              BIG BLIND
-                            </span>
-                          )}
-                          {player.position === 2 && (
-                            <span className="ml-2 px-1.5 py-0.5 text-xs font-semibold bg-yellow-100 text-yellow-800 rounded">
-                              SMALL BLIND
-                            </span>
-                          )}
                           {isCurrentTurn && <span className="ml-2 text-xs text-blue-600 font-semibold">TURN</span>}
                         </div>
                       </div>
