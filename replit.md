@@ -112,6 +112,13 @@ The application is configured for deployment on Replit with the following setup:
 - Enhanced API routes with proper poker betting logic validation
 - Improved frontend state management for turn-based actions
 
+### Bug Fixes (June 20, 2025)
+- **Fixed Betting Calculations**: Corrected pot calculations to only add actual contributed amounts
+- **Fixed Raise Logic**: Players can no longer raise to amounts lower than current bet
+- **Fixed Call Logic**: Players now call by paying only the difference needed
+- **Fixed Balance Updates**: Player balances now decrease by correct amounts contributed
+- **Improved Error Handling**: Added detailed logging for betting action debugging
+
 ## User Preferences
 
 ```

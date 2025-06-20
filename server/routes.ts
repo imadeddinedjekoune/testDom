@@ -145,7 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update pot
       if (actionData.action !== "fold") {
-        await storage.updateGamePot(gameId, game.pot + potContribution);
+        await storage.updateGamePot(gameId, game.pot + amount);
       }
       
       // Record action
@@ -156,7 +156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         playerId: currentPlayer.id,
         playerName: currentPlayer.name,
         action: actionData.action,
-        amount: actionData.action === "fold" ? undefined : (actionData.action === "call" ? potContribution : (actionData.action === "raise" ? newBet : potContribution)),
+        amount: actionData.action === "fold" ? undefined : (actionData.action === "raise" ? newBet : amount),
       });
       
       // Move to next player
@@ -171,6 +171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ success: true });
     } catch (error) {
+      console.error("Action processing error:", error);
       res.status(400).json({ error: "Failed to process action" });
     }
   });
