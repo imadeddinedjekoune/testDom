@@ -119,6 +119,7 @@ The application is configured for deployment on Replit with the following setup:
 - **Fixed Balance Updates**: Player balances now decrease by correct amounts contributed
 - **Fixed End Game Logic**: Game winner now receives only the current pot, not all player money
 - **Removed Blind Mechanics**: Simplified to standard betting without blind penalties
+- **Fixed Turn Progression**: When players fold, turn now continues to next active player instead of restarting
 - **Improved Error Handling**: Added detailed logging for betting action debugging
 
 ## User Preferences

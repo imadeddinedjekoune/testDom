@@ -156,11 +156,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount: actionData.action === "fold" ? undefined : (actionData.action === "raise" ? newBet : amount),
       });
       
-      // Move to next player
-      const activePlayers = allPlayers.filter(p => p.status === "active");
-      const currentIndex = activePlayers.findIndex(p => p.id === currentPlayer.id);
-      const nextIndex = (currentIndex + 1) % activePlayers.length;
-      const nextPlayer = activePlayers[nextIndex];
+      // Move to next player - get fresh player data after status update
+      const updatedPlayers = await storage.getPlayersByGame(gameId);
+      const allPlayersSorted = updatedPlayers.sort((a, b) => a.position - b.position);
+      const currentIndex = allPlayersSorted.findIndex(p => p.id === currentPlayer.id);
+      
+      // Find next active player in sequence
+      let nextPlayer = null;
+      
+      for (let i = 1; i <= allPlayersSorted.length; i++) {
+        const nextPlayerIndex = (currentIndex + i) % allPlayersSorted.length;
+        const candidate = allPlayersSorted[nextPlayerIndex];
+        if (candidate.status === "active") {
+          nextPlayer = candidate;
+          break;
+        }
+      }
       
       if (nextPlayer) {
         await storage.updateCurrentPlayerTurn(gameId, nextPlayer.position);
