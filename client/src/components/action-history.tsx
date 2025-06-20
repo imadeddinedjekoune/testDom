@@ -10,13 +10,15 @@ export function ActionHistory({ gameState }: ActionHistoryProps) {
       case "bet":
         return `bet ${action.amount}`;
       case "call":
-        return `called ${action.amount}`;
+        return `called (${action.amount})`;
       case "raise":
         return `raised to ${action.amount}`;
       case "fold":
         return "folded";
       case "won":
         return `won pot (${action.amount})`;
+      case "game_winner":
+        return `won the entire game (${action.amount})`;
       default:
         return action.action;
     }

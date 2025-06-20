@@ -125,15 +125,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return res.status(400).json({ error: `Raise must be higher than current bet of ${game.currentBetAmount}` });
           }
           
-          const raiseAmount = amount - currentPlayer.currentBet;
-          if (raiseAmount > currentPlayer.balance) {
+          // Calculate how much more the player needs to add
+          const additionalAmount = amount - currentPlayer.currentBet;
+          if (additionalAmount > currentPlayer.balance) {
             return res.status(400).json({ error: "Insufficient balance to raise" });
           }
           
-          newBalance -= raiseAmount;
+          newBalance -= additionalAmount;
           newBet = amount;
-          amount = raiseAmount;
-          await storage.updateCurrentBetAmount(gameId, newBet);
+          amount = additionalAmount;  // This is what gets added to the pot
+          await storage.updateCurrentBetAmount(gameId, newBet);  // Update game's current bet to the new total bet amount
           break;
       }
       
@@ -144,7 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update pot
       if (actionData.action !== "fold") {
-        await storage.updateGamePot(gameId, game.pot + amount);
+        await storage.updateGamePot(gameId, game.pot + potContribution);
       }
       
       // Record action
@@ -155,7 +156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         playerId: currentPlayer.id,
         playerName: currentPlayer.name,
         action: actionData.action,
-        amount: actionData.action === "fold" ? undefined : amount,
+        amount: actionData.action === "fold" ? undefined : (actionData.action === "call" ? potContribution : (actionData.action === "raise" ? newBet : potContribution)),
       });
       
       // Move to next player
