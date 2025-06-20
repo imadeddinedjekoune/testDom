@@ -92,9 +92,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           break;
           
         case "call":
-          // Find the highest current bet
-          const highestBet = Math.max(...allPlayers.map(p => p.currentBet));
-          const callAmount = highestBet - currentPlayer.currentBet;
+          // Call the current bet amount
+          const callAmount = game.currentBetAmount - currentPlayer.currentBet;
           
           if (callAmount > currentPlayer.balance) {
             return res.status(400).json({ error: "Insufficient balance to call" });
@@ -106,13 +105,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
           break;
           
         case "bet":
-        case "raise":
+          // Only allow bet if no current bet is set (first player)
+          if (game.currentBetAmount > 0) {
+            return res.status(400).json({ error: "Cannot bet when there's already a bet. Use raise instead." });
+          }
+          
           if (amount > currentPlayer.balance) {
             return res.status(400).json({ error: "Insufficient balance" });
           }
           
           newBalance -= amount;
           newBet += amount;
+          await storage.updateCurrentBetAmount(gameId, amount);
+          break;
+          
+        case "raise":
+          // Raise must be higher than current bet
+          if (amount <= game.currentBetAmount) {
+            return res.status(400).json({ error: `Raise must be higher than current bet of ${game.currentBetAmount}` });
+          }
+          
+          const raiseAmount = amount - currentPlayer.currentBet;
+          if (raiseAmount > currentPlayer.balance) {
+            return res.status(400).json({ error: "Insufficient balance to raise" });
+          }
+          
+          newBalance -= raiseAmount;
+          newBet = amount;
+          amount = raiseAmount;
+          await storage.updateCurrentBetAmount(gameId, newBet);
           break;
       }
       
@@ -168,6 +189,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (currentIndex < rounds.length - 1) {
         await storage.updateGameRound(gameId, rounds[currentIndex + 1]);
+        // Reset turn to first active player for new round
+        const allPlayers = await storage.getPlayersByGame(gameId);
+        const activePlayers = allPlayers.filter(p => p.status === "active");
+        if (activePlayers.length > 0) {
+          await storage.updateCurrentPlayerTurn(gameId, activePlayers[0].position);
+        }
       }
       
       res.json({ success: true });

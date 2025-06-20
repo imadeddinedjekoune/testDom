@@ -7,6 +7,7 @@ export interface IStorage {
   updateGameRound(gameId: number, round: string): Promise<void>;
   updateGamePot(gameId: number, pot: number): Promise<void>;
   updateCurrentPlayerTurn(gameId: number, playerId: number): Promise<void>;
+  updateCurrentBetAmount(gameId: number, amount: number): Promise<void>;
   nextHand(gameId: number): Promise<void>;
   endGame(gameId: number): Promise<void>;
   
@@ -49,6 +50,7 @@ export class MemStorage implements IStorage {
       currentRound: "pre-flop",
       pot: 0,
       currentPlayerTurn: 1,
+      currentBetAmount: 0,
       isActive: true,
       createdAt: new Date(),
     };
@@ -84,6 +86,14 @@ export class MemStorage implements IStorage {
     }
   }
 
+  async updateCurrentBetAmount(gameId: number, amount: number): Promise<void> {
+    const game = this.games.get(gameId);
+    if (game) {
+      game.currentBetAmount = amount;
+      this.games.set(gameId, game);
+    }
+  }
+
   async nextHand(gameId: number): Promise<void> {
     const game = this.games.get(gameId);
     if (game) {
@@ -91,6 +101,7 @@ export class MemStorage implements IStorage {
       game.currentRound = "pre-flop";
       game.pot = 0;
       game.currentPlayerTurn = 1;
+      game.currentBetAmount = 0;
       this.games.set(gameId, game);
       
       // Reset all player bets and status

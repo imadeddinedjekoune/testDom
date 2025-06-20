@@ -16,9 +16,16 @@ export function BettingActions({ gameState, onAction }: BettingActionsProps) {
   const [currentAction, setCurrentAction] = useState<BetAction>("bet");
 
   const currentPlayer = gameState.players.find(p => p.position === gameState.game.currentPlayerTurn && p.status === "active");
+  
+  const callAmount = gameState.game.currentBetAmount - (currentPlayer?.currentBet || 0);
+  const canBet = gameState.game.currentBetAmount === 0;
+  const canCall = gameState.game.currentBetAmount > 0 && callAmount > 0;
+  const canRaise = gameState.game.currentBetAmount > 0;
 
   const handleAction = (action: BetAction) => {
-    if (action === "bet" || action === "raise") {
+    if (action === "call") {
+      onAction(action);
+    } else if (action === "bet" || action === "raise") {
       setCurrentAction(action);
       setShowBetInput(true);
     } else {
@@ -57,13 +64,22 @@ export function BettingActions({ gameState, onAction }: BettingActionsProps) {
       
       {/* Current Player Display */}
       <div className="mb-4 p-3 bg-blue-50 rounded-md border border-blue-200">
-        <div className="flex items-center space-x-3">
-          <User className="h-5 w-5 text-blue-600" />
-          <div>
-            <p className="text-sm font-medium text-blue-900">Current Turn</p>
-            <p className="text-lg font-semibold text-blue-800">
-              {currentPlayer.name} (Balance: {currentPlayer.balance})
-            </p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <User className="h-5 w-5 text-blue-600" />
+            <div>
+              <p className="text-sm font-medium text-blue-900">Current Turn</p>
+              <p className="text-lg font-semibold text-blue-800">
+                {currentPlayer.name} (Balance: {currentPlayer.balance})
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-medium text-blue-900">Current Bet</p>
+            <p className="text-xl font-bold text-blue-800">{gameState.game.currentBetAmount}</p>
+            {canCall && (
+              <p className="text-sm text-blue-600">Call: {callAmount}</p>
+            )}
           </div>
         </div>
       </div>
@@ -72,21 +88,24 @@ export function BettingActions({ gameState, onAction }: BettingActionsProps) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         <Button
           onClick={() => handleAction("call")}
-          className="bg-blue-600 hover:bg-blue-700"
+          disabled={!canCall}
+          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300"
         >
           <Handshake className="h-4 w-4 mr-2" />
-          Call
+          Call {canCall ? `(${callAmount})` : ''}
         </Button>
         <Button
           onClick={() => handleAction("raise")}
-          className="bg-yellow-500 hover:bg-yellow-600"
+          disabled={!canRaise}
+          className="bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-300"
         >
           <ArrowUp className="h-4 w-4 mr-2" />
           Raise
         </Button>
         <Button
           onClick={() => handleAction("bet")}
-          className="bg-green-500 hover:bg-green-600"
+          disabled={!canBet}
+          className="bg-green-500 hover:bg-green-600 disabled:bg-gray-300"
         >
           <Coins className="h-4 w-4 mr-2" />
           Bet
@@ -103,18 +122,22 @@ export function BettingActions({ gameState, onAction }: BettingActionsProps) {
       {/* Bet Amount Input */}
       {showBetInput && (
         <div className="bg-gray-50 p-4 rounded-md">
+          <div className="mb-2">
+            <Label className="text-sm font-medium text-gray-700">
+              {currentAction === "bet" ? "Bet Amount:" : `Raise to (minimum ${gameState.game.currentBetAmount + 1}):`}
+            </Label>
+          </div>
           <div className="flex items-center space-x-3">
-            <Label className="text-sm font-medium text-gray-700">Amount:</Label>
             <Input
               type="number"
-              min="1"
-              placeholder="Enter bet amount"
+              min={currentAction === "bet" ? "1" : (gameState.game.currentBetAmount + 1).toString()}
+              placeholder={currentAction === "bet" ? "Enter bet amount" : `Minimum ${gameState.game.currentBetAmount + 1}`}
               value={betAmount}
               onChange={(e) => setBetAmount(e.target.value)}
               className="flex-1"
             />
             <Button onClick={confirmBet} className="bg-blue-600 hover:bg-blue-700">
-              Confirm
+              Confirm {currentAction === "bet" ? "Bet" : "Raise"}
             </Button>
             <Button variant="outline" onClick={cancelBet}>
               Cancel

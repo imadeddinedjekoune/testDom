@@ -89,12 +89,28 @@ The application is configured for deployment on Replit with the following setup:
 - **Production**: `npm run build` followed by `npm run start`
 - **Database Migrations**: `npm run db:push` applies schema changes
 
-## Changelog
+## Recent Changes
 
-```
-Changelog:
-- June 20, 2025. Initial setup
-```
+### June 20, 2025 - Turn-Based Betting System & End Game Features
+- **Automatic Turn Progression**: Eliminated manual player selection; system now automatically cycles through players (P1 → P2 → P3 → P1...)
+- **Current Player Highlighting**: Active player is highlighted with blue border and "TURN" indicator
+- **Traditional Poker Betting Rules**: 
+  - First player sets initial bet amount
+  - Subsequent players can only call (match amount), raise (increase amount), or fold
+  - Bet amount persists across all three rounds (pre-flop, turn, river)
+  - Call button shows exact amount needed
+- **Enhanced Betting Interface**: 
+  - Displays current bet amount and call amount for each turn
+  - Disabled buttons when actions aren't available (e.g., can't bet if bet already exists)
+  - Clear validation messages for invalid actions
+- **End Game Feature**: Added "Game Winner" button to declare final winner who takes all remaining money
+- **Separate Hand vs Game Winners**: "Hand Winner" wins current pot, "Game Winner" ends entire game
+
+### Architecture Updates
+- Added `currentPlayerTurn` and `currentBetAmount` fields to game schema
+- Updated storage interface with turn management and bet amount tracking
+- Enhanced API routes with proper poker betting logic validation
+- Improved frontend state management for turn-based actions
 
 ## User Preferences
 

@@ -10,6 +10,7 @@ export const games = pgTable("games", {
   currentRound: text("current_round").notNull().default("pre-flop"),
   pot: integer("pot").notNull().default(0),
   currentPlayerTurn: integer("current_player_turn").notNull().default(1),
+  currentBetAmount: integer("current_bet_amount").notNull().default(0),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
