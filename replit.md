@@ -115,8 +115,9 @@ The application is configured for deployment on Replit with the following setup:
 ### Bug Fixes (June 20, 2025)
 - **Fixed Betting Calculations**: Corrected pot calculations to only add actual contributed amounts
 - **Fixed Raise Logic**: Players can no longer raise to amounts lower than current bet
-- **Fixed Call Logic**: Players now call by paying only the difference needed
+- **Fixed Call Logic**: Call amount now always equals the current bet amount exactly (if current bet is 15, call is 15)
 - **Fixed Balance Updates**: Player balances now decrease by correct amounts contributed
+- **Fixed End Game Logic**: Game winner now receives only the current pot, not all player money
 - **Improved Error Handling**: Added detailed logging for betting action debugging
 
 ## User Preferences

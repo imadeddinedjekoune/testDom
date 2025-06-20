@@ -92,16 +92,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           break;
           
         case "call":
-          // Call the current bet amount
-          const callAmount = game.currentBetAmount - currentPlayer.currentBet;
+          // Call amount is always equal to the current bet amount
+          amount = game.currentBetAmount;
           
-          if (callAmount > currentPlayer.balance) {
+          if (amount > currentPlayer.balance) {
             return res.status(400).json({ error: "Insufficient balance to call" });
           }
           
-          amount = callAmount;
-          newBalance -= callAmount;
-          newBet += callAmount;
+          newBalance -= amount;
+          newBet = amount;  // Set player's bet to the full call amount
           break;
           
         case "bet":

@@ -17,9 +17,9 @@ export function BettingActions({ gameState, onAction }: BettingActionsProps) {
 
   const currentPlayer = gameState.players.find(p => p.position === gameState.game.currentPlayerTurn && p.status === "active");
   
-  const callAmount = gameState.game.currentBetAmount - (currentPlayer?.currentBet || 0);
+  const callAmount = gameState.game.currentBetAmount;
   const canBet = gameState.game.currentBetAmount === 0;
-  const canCall = gameState.game.currentBetAmount > 0 && callAmount > 0;
+  const canCall = gameState.game.currentBetAmount > 0;
   const canRaise = gameState.game.currentBetAmount > 0;
 
   const handleAction = (action: BetAction) => {
